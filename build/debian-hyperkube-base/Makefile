@@ -58,7 +58,8 @@ endif
 	# Register /usr/bin/qemu-ARCH-static as the handler for non-x86 binaries in the kernel
 	docker run --rm --privileged multiarch/qemu-user-static:register --reset
 ifeq ($(USE_PROXY), true)
-	docker build --network=host --pull -t $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG) $(TEMP_DIR) \
+	docker build --pull -t $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG) $(TEMP_DIR) \
+		--network=host \
                 --build-arg http_proxy=$(HTTP_PROXY) \
                 --build-arg https_proxy=$(HTTPS_PROXY) \
                 --build-arg HTTP_PROXY=$(HTTP_PROXY) \
@@ -66,7 +67,8 @@ ifeq ($(USE_PROXY), true)
                 --build-arg no_proxy=$(NO_PROXY) \
                 --build-arg NO_PROXY=$(NO_PROXY)
 else
-	docker build --network=host --pull -t $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG) $(TEMP_DIR)
+	docker build --pull -t $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG) $(TEMP_DIR) \
+		--network=host
 endif
 
 	rm -rf $(TEMP_DIR)
