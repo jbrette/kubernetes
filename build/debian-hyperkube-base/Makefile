@@ -27,7 +27,7 @@ HTTPS_PROXY?=http://proxy.myorganization.com:8000
 NO_PROXY?=localhost,127.0.0.1,.svc.cluster.local
 USE_PROXY?=false
 
-BASEIMAGE=k8s.gcr.io/debian-base-$(ARCH):0.3
+BASEIMAGE=$(REGISTRY)/debian-base-$(ARCH):0.3
 CNI_VERSION=v0.6.0
 
 TEMP_DIR:=$(shell mktemp -d)

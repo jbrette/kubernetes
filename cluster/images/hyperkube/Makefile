@@ -26,7 +26,7 @@ HTTPS_PROXY?=http://proxy.myorganization.com:8000
 NO_PROXY?=localhost,127.0.0.1,.svc.cluster.local
 USE_PROXY?=false
 
-BASEIMAGE=k8s.gcr.io/debian-hyperkube-base-$(ARCH):0.10
+BASEIMAGE=$(REGISTRY)/debian-hyperkube-base-$(ARCH):0.10
 TEMP_DIR:=$(shell mktemp -d -t hyperkubeXXXXXX)
 
 all: build
