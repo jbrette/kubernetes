@@ -17,6 +17,10 @@ all: build
 REGISTRY ?= staging-k8s.gcr.io
 IMAGE ?= debian-base
 BUILD_IMAGE ?= debian-build
+HTTP_PROXY?=http://proxy.myorganization.com:8000
+HTTPS_PROXY?=http://proxy.myorganization.com:8000
+NO_PROXY?=localhost,127.0.0.1,.svc.cluster.local
+USE_PROXY?=false
 
 TAG ?= 0.3
 
@@ -64,10 +68,36 @@ else
 endif
 	mv $(TEMP_DIR)/Dockerfile.build.tmp $(TEMP_DIR)/Dockerfile.build
 
-	docker build --pull -t $(BUILD_IMAGE) -f $(TEMP_DIR)/Dockerfile.build $(TEMP_DIR)
+ifeq ($(USE_PROXY), true)
+	docker build --pull -t $(BUILD_IMAGE) -f $(TEMP_DIR)/Dockerfile.build $(TEMP_DIR) \
+		--network=host \
+		--build-arg http_proxy=$(HTTP_PROXY) \
+		--build-arg https_proxy=$(HTTPS_PROXY) \
+		--build-arg HTTP_PROXY=$(HTTP_PROXY) \
+		--build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
+		--build-arg no_proxy=$(NO_PROXY) \
+		--build-arg NO_PROXY=$(NO_PROXY)
+else
+	docker build --pull -t $(BUILD_IMAGE) -f $(TEMP_DIR)/Dockerfile.build $(TEMP_DIR) \
+		--network=host
+endif
+
 	docker create --name $(BUILD_IMAGE) $(BUILD_IMAGE)
 	docker export $(BUILD_IMAGE) > $(TEMP_DIR)/$(TAR_FILE)
-	docker build -t $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG) $(TEMP_DIR)
+
+ifeq ($(USE_PROXY), true)
+	docker build -t $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG) $(TEMP_DIR) \
+		--network=host \
+		--build-arg http_proxy=$(HTTP_PROXY) \
+		--build-arg https_proxy=$(HTTPS_PROXY) \
+		--build-arg HTTP_PROXY=$(HTTP_PROXY) \
+		--build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
+		--build-arg no_proxy=$(NO_PROXY) \
+		--build-arg NO_PROXY=$(NO_PROXY)
+else
+	docker build -t $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG) $(TEMP_DIR) \
+		--network=host
+endif
 	rm -rf $(TEMP_DIR)
 
 push: build

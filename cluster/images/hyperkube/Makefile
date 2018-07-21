@@ -21,6 +21,10 @@ REGISTRY?=staging-k8s.gcr.io
 ARCH?=amd64
 OUT_DIR?=_output
 HYPERKUBE_BIN?=$(shell pwd)/../../../$(OUT_DIR)/dockerized/bin/linux/$(ARCH)/hyperkube
+HTTP_PROXY?=http://proxy.myorganization.com:8000
+HTTPS_PROXY?=http://proxy.myorganization.com:8000
+NO_PROXY?=localhost,127.0.0.1,.svc.cluster.local
+USE_PROXY?=false
 
 BASEIMAGE=k8s.gcr.io/debian-hyperkube-base-$(ARCH):0.10
 TEMP_DIR:=$(shell mktemp -d -t hyperkubeXXXXXX)
@@ -41,7 +45,18 @@ endif
 
 	# Register /usr/bin/qemu-ARCH-static as the handler for non-x86 binaries in the kernel
 	docker run --rm --privileged multiarch/qemu-user-static:register --reset
+ifeq ($(USE_PROXY), true)
+	docker build --pull -t ${REGISTRY}/hyperkube-${ARCH}:${VERSION} ${TEMP_DIR} \
+		--network=host \
+		--build-arg http_proxy=$(HTTP_PROXY) \
+		--build-arg https_proxy=$(HTTPS_PROXY) \
+		--build-arg HTTP_PROXY=$(HTTP_PROXY) \
+		--build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
+		--build-arg no_proxy=$(NO_PROXY) \
+		--build-arg NO_PROXY=$(NO_PROXY)
+else
 	docker build --pull -t ${REGISTRY}/hyperkube-${ARCH}:${VERSION} ${TEMP_DIR}
+endif
 	rm -rf "${TEMP_DIR}"
 
 push: build

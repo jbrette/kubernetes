@@ -22,6 +22,10 @@ IMAGE?=debian-hyperkube-base
 TAG=0.10
 ARCH?=amd64
 CACHEBUST?=1
+HTTP_PROXY?=http://proxy.myorganization.com:8000
+HTTPS_PROXY?=http://proxy.myorganization.com:8000
+NO_PROXY?=localhost,127.0.0.1,.svc.cluster.local
+USE_PROXY?=false
 
 BASEIMAGE=k8s.gcr.io/debian-base-$(ARCH):0.3
 CNI_VERSION=v0.6.0
@@ -53,7 +57,18 @@ endif
 
 	# Register /usr/bin/qemu-ARCH-static as the handler for non-x86 binaries in the kernel
 	docker run --rm --privileged multiarch/qemu-user-static:register --reset
-	docker build --pull -t $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG) $(TEMP_DIR)
+ifeq ($(USE_PROXY), true)
+	docker build --network=host --pull -t $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG) $(TEMP_DIR) \
+                --build-arg http_proxy=$(HTTP_PROXY) \
+                --build-arg https_proxy=$(HTTPS_PROXY) \
+                --build-arg HTTP_PROXY=$(HTTP_PROXY) \
+                --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
+                --build-arg no_proxy=$(NO_PROXY) \
+                --build-arg NO_PROXY=$(NO_PROXY)
+else
+	docker build --network=host --pull -t $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG) $(TEMP_DIR)
+endif
+
 	rm -rf $(TEMP_DIR)
 
 push: build
